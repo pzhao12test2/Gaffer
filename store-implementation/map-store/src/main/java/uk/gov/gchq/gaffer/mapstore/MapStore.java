@@ -65,8 +65,7 @@ public class MapStore extends Store {
             StoreTrait.PRE_AGGREGATION_FILTERING,
             StoreTrait.POST_AGGREGATION_FILTERING,
             StoreTrait.TRANSFORMATION,
-            StoreTrait.POST_TRANSFORMATION_FILTERING,
-            StoreTrait.MATCHED_VERTEX));
+            StoreTrait.POST_TRANSFORMATION_FILTERING));
     private static final Logger LOGGER = LoggerFactory.getLogger(MapStore.class);
     private static MapImpl staticMapImpl;
     private MapImpl mapImpl;

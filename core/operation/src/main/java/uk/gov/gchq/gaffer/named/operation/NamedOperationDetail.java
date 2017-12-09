@@ -49,12 +49,10 @@ public class NamedOperationDetail implements Serializable {
     private List<String> readAccessRoles;
     private List<String> writeAccessRoles;
     private Map<String, ParameterDetail> parameters = Maps.newHashMap();
-    private Integer score;
 
     public NamedOperationDetail(final String operationName, final String description, final String userId,
                                 final String operations, final List<String> readers,
-                                final List<String> writers, final Map<String, ParameterDetail> parameters,
-                                final Integer score) {
+                                final List<String> writers, final Map<String, ParameterDetail> parameters) {
         if (null == operations) {
             throw new IllegalArgumentException("Operation Chain must not be empty");
         }
@@ -70,7 +68,6 @@ public class NamedOperationDetail implements Serializable {
         this.readAccessRoles = readers;
         this.writeAccessRoles = writers;
         this.parameters = parameters;
-        this.score = score;
     }
 
     public String getOperationName() {
@@ -99,10 +96,6 @@ public class NamedOperationDetail implements Serializable {
 
     public Map<String, ParameterDetail> getParameters() {
         return parameters;
-    }
-
-    public Integer getScore() {
-        return score;
     }
 
     private String buildParamNameString(final String paramKey) {
@@ -214,7 +207,6 @@ public class NamedOperationDetail implements Serializable {
                 .append(readAccessRoles, op.readAccessRoles)
                 .append(writeAccessRoles, op.writeAccessRoles)
                 .append(parameters, op.parameters)
-                .append(score, op.score)
                 .isEquals();
     }
 
@@ -227,7 +219,6 @@ public class NamedOperationDetail implements Serializable {
                 .append(readAccessRoles)
                 .append(writeAccessRoles)
                 .append(parameters)
-                .append(score)
                 .hashCode();
     }
 
@@ -240,7 +231,6 @@ public class NamedOperationDetail implements Serializable {
                 .append("readAccessRoles", readAccessRoles)
                 .append("writeAccessRoles", writeAccessRoles)
                 .append("parameters", parameters)
-                .append("score", score)
                 .toString();
     }
 
@@ -271,7 +261,6 @@ public class NamedOperationDetail implements Serializable {
         private List<String> readers;
         private List<String> writers;
         private Map<String, ParameterDetail> parameters;
-        private Integer score;
 
         public Builder creatorId(final String creatorId) {
             this.creatorId = creatorId;
@@ -320,13 +309,8 @@ public class NamedOperationDetail implements Serializable {
             return this;
         }
 
-        public Builder score(final Integer score) {
-            this.score = score;
-            return this;
-        }
-
         public NamedOperationDetail build() {
-            return new NamedOperationDetail(operationName, description, creatorId, opChain, readers, writers, parameters, score);
+            return new NamedOperationDetail(operationName, description, creatorId, opChain, readers, writers, parameters);
         }
     }
 }

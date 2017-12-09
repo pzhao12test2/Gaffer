@@ -18,7 +18,6 @@ package uk.gov.gchq.gaffer.store;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import uk.gov.gchq.gaffer.operation.OperationChain;
 import uk.gov.gchq.gaffer.operation.export.Exporter;
 import uk.gov.gchq.gaffer.user.User;
 
@@ -36,7 +35,6 @@ public class Context {
     private final User user;
     private final String jobId;
     private final Map<String, Object> config;
-    private OperationChain<?> originalOpChain;
 
     /**
      * Map of exporter simple class name to exporter
@@ -108,19 +106,6 @@ public class Context {
         config.put(key, value);
     }
 
-    /**
-     * Gets the original operation chain. This should not be modified.
-     *
-     * @return the original operation chain.
-     */
-    public OperationChain<?> getOriginalOpChain() {
-        return originalOpChain;
-    }
-
-    public void setOriginalOpChain(final OperationChain<?> originalOpChain) {
-        this.originalOpChain = originalOpChain;
-    }
-
     @Override
     public boolean equals(final Object obj) {
         if (this == obj) {
@@ -133,9 +118,8 @@ public class Context {
         final Context context = (Context) obj;
 
         return new EqualsBuilder()
-                .append(jobId, context.jobId)
                 .append(user, context.user)
-                .append(originalOpChain, context.originalOpChain)
+                .append(jobId, context.jobId)
                 .append(exporters, context.exporters)
                 .append(config, context.config)
                 .isEquals();
@@ -146,8 +130,6 @@ public class Context {
         return new HashCodeBuilder(71, 31)
                 .append(jobId)
                 .append(user)
-                .append(originalOpChain)
-                .append(exporters)
                 .append(config)
                 .toHashCode();
     }

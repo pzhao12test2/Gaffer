@@ -24,30 +24,20 @@ import uk.gov.gchq.gaffer.commonutil.TestPropertyNames;
 import uk.gov.gchq.gaffer.data.element.Edge;
 import uk.gov.gchq.gaffer.data.element.Element;
 import uk.gov.gchq.gaffer.data.element.Entity;
-import uk.gov.gchq.gaffer.data.element.IdentifierType;
 import uk.gov.gchq.gaffer.data.element.function.ElementTransformer;
-import uk.gov.gchq.gaffer.data.element.id.EdgeId;
-import uk.gov.gchq.gaffer.data.util.ElementUtil;
 import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.operation.impl.function.Transform;
 import uk.gov.gchq.gaffer.store.Context;
 import uk.gov.gchq.gaffer.store.Store;
-import uk.gov.gchq.gaffer.store.schema.Schema;
-import uk.gov.gchq.gaffer.store.schema.SchemaEdgeDefinition;
-import uk.gov.gchq.gaffer.store.schema.SchemaEntityDefinition;
-import uk.gov.gchq.gaffer.store.schema.TypeDefinition;
-import uk.gov.gchq.koryphe.impl.function.Divide;
 import uk.gov.gchq.koryphe.impl.function.Identity;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -57,7 +47,6 @@ public class TransformHandlerTest {
     private Store store;
     private Context context;
     private TransformHandler handler;
-    private Schema schema;
 
     @Before
     public void setup() {
@@ -66,12 +55,7 @@ public class TransformHandlerTest {
         store = mock(Store.class);
         context = new Context();
         handler = new TransformHandler();
-        schema = new Schema.Builder()
-                .edge(TestGroups.EDGE, new SchemaEdgeDefinition())
-                .edge(TestGroups.EDGE_2, new SchemaEdgeDefinition())
-                .entity(TestGroups.ENTITY, new SchemaEntityDefinition())
-                .entity(TestGroups.ENTITY_2, new SchemaEntityDefinition())
-                .build();
+
     }
 
     @Test
@@ -79,7 +63,6 @@ public class TransformHandlerTest {
         // Given
         final Function<String, Integer> function = mock(Function.class);
         given(function.apply(TestPropertyNames.STRING)).willReturn(6);
-        given(store.getSchema()).willReturn(schema);
 
         final Edge edge = new Edge.Builder()
                 .group(TestGroups.EDGE)
@@ -136,8 +119,6 @@ public class TransformHandlerTest {
     @Test
     public void shouldTransformElementsUsingIdentityFunction() throws OperationException {
         // Given
-        given(store.getSchema()).willReturn(schema);
-
         final Entity entity = new Entity.Builder()
                 .group(TestGroups.ENTITY)
                 .property(TestPropertyNames.PROP_1, TestPropertyNames.INT)
@@ -194,7 +175,6 @@ public class TransformHandlerTest {
         // Given
         final Function<String, Integer> function = String::length;
         final Map<String, ElementTransformer> entities = new HashMap<>();
-        given(store.getSchema()).willReturn(schema);
 
         final Entity entity = new Entity.Builder()
                 .group(TestGroups.ENTITY)
@@ -259,7 +239,6 @@ public class TransformHandlerTest {
         final Function<String, Integer> function = String::length;
         final Function<String, String> function1 = String::toUpperCase;
         final Map<String, ElementTransformer> edges = new HashMap<>();
-        given(store.getSchema()).willReturn(schema);
 
         final Edge edge = new Edge.Builder()
                 .group(TestGroups.EDGE)
@@ -323,197 +302,5 @@ public class TransformHandlerTest {
 
         assertTrue(isSame);
     }
-
-    @Test
-    public void shouldFailValidationWhenSchemaElementDefinitionsAreNull() {
-        // Given
-        given(store.getSchema()).willReturn(new Schema());
-
-        final Entity entity = new Entity.Builder()
-                .group(TestGroups.ENTITY)
-                .property(TestPropertyNames.PROP_1, TestPropertyNames.INT)
-                .property(TestPropertyNames.PROP_2, TestPropertyNames.STRING)
-                .build();
-
-        final Entity entity1 = new Entity.Builder()
-                .group(TestGroups.ENTITY)
-                .property(TestPropertyNames.PROP_1, TestPropertyNames.INT)
-                .build();
-
-        final ElementTransformer transformer = new ElementTransformer.Builder()
-                .select(TestPropertyNames.PROP_1)
-                .execute(new Identity())
-                .project(TestPropertyNames.PROP_3)
-                .build();
-
-        input.add(entity);
-        input.add(entity1);
-
-        final Transform transform = new Transform.Builder()
-                .input(input)
-                .entity(TestGroups.ENTITY, transformer)
-                .build();
-
-        // When / Then
-        try {
-            final Iterable<? extends Element> results = handler.doOperation(transform, context, store);
-            fail("Exception expected");
-        } catch (final OperationException e) {
-            assertTrue(e.getMessage().contains("Entity group: " + TestGroups.ENTITY + " does not exist in the schema."));
-        }
-    }
-
-    @Test
-    public void shouldFailValidationWhenElementTransformerOperationIsNull() {
-        // Given
-        given(store.getSchema()).willReturn(schema);
-
-        final Entity entity = new Entity.Builder()
-                .group(TestGroups.ENTITY)
-                .property(TestPropertyNames.PROP_1, TestPropertyNames.INT)
-                .property(TestPropertyNames.PROP_2, TestPropertyNames.STRING)
-                .build();
-
-        final Entity entity1 = new Entity.Builder()
-                .group(TestGroups.ENTITY)
-                .property(TestPropertyNames.PROP_1, TestPropertyNames.INT)
-                .build();
-
-        final ElementTransformer transformer = new ElementTransformer.Builder()
-                .select(TestPropertyNames.PROP_1)
-                .execute(null)
-                .project(TestPropertyNames.PROP_3)
-                .build();
-
-        input.add(entity);
-        input.add(entity1);
-
-        final Transform transform = new Transform.Builder()
-                .input(input)
-                .entity(TestGroups.ENTITY, transformer)
-                .build();
-
-        // When / Then
-        try {
-            final Iterable<? extends Element> results = handler.doOperation(transform, context, store);
-            fail("Exception expected");
-        } catch (final OperationException e) {
-            assertTrue(e.getMessage().contains(transformer.getClass().getSimpleName() + " contains a null function."));
-        }
-    }
-
-    @Test
-    public void shouldFailValidationWhenFunctionSignatureIsInvalid() {
-        // Given
-        final Schema schema = new Schema.Builder()
-                .entity(TestGroups.ENTITY, new SchemaEntityDefinition.Builder()
-                        .property(TestPropertyNames.PROP_1, TestPropertyNames.STRING)
-                        .build())
-                .type(TestPropertyNames.STRING, new TypeDefinition(String.class))
-                .build();
-        given(store.getSchema()).willReturn(schema);
-
-        final Entity entity = new Entity.Builder()
-                .group(TestGroups.ENTITY)
-                .property(TestPropertyNames.PROP_1, TestPropertyNames.INT)
-                .property(TestPropertyNames.PROP_2, TestPropertyNames.STRING)
-                .build();
-
-        final Entity entity1 = new Entity.Builder()
-                .group(TestGroups.ENTITY)
-                .property(TestPropertyNames.PROP_1, TestPropertyNames.INT)
-                .build();
-
-        final ElementTransformer transformer = new ElementTransformer.Builder()
-                .select(TestPropertyNames.PROP_1)
-                .execute(new Divide())
-                .project(TestPropertyNames.PROP_3)
-                .build();
-
-        input.add(entity);
-        input.add(entity1);
-
-        final Transform transform = new Transform.Builder()
-                .input(input)
-                .entity(TestGroups.ENTITY, transformer)
-                .build();
-
-        // When / Then
-        try {
-            final Iterable<? extends Element> results = handler.doOperation(transform, context, store);
-            fail("Exception expected");
-        } catch (final OperationException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    @Test
-    public void shouldSelectMatchedVertexForTransform() throws OperationException {
-        // Given
-        given(store.getSchema()).willReturn(schema);
-
-        final Edge edge = new Edge.Builder()
-                .group(TestGroups.EDGE)
-                .source("srcVal")
-                .dest("destVal")
-                .matchedVertex(EdgeId.MatchedVertex.SOURCE)
-                .build();
-
-        final Transform transform = new Transform.Builder()
-                .input(edge)
-                .edge(TestGroups.EDGE, new ElementTransformer.Builder()
-                        .select(IdentifierType.MATCHED_VERTEX.name())
-                        .execute(new Identity())
-                        .project(TestPropertyNames.PROP_3)
-                        .build())
-                .build();
-
-        // When
-        final Iterable<? extends Element> results = handler.doOperation(transform, context, store);
-
-        // Then
-        final Edge expectedEdge = new Edge.Builder()
-                .group(TestGroups.EDGE)
-                .source("srcVal")
-                .dest("destVal")
-                .matchedVertex(EdgeId.MatchedVertex.SOURCE)
-                .property(TestPropertyNames.PROP_3, "srcVal")
-                .build();
-        ElementUtil.assertElementEquals(Collections.singletonList(expectedEdge), results);
-    }
-
-    @Test
-    public void shouldSelectAdjacentMatchedVertexForTransform() throws OperationException {
-        // Given
-        given(store.getSchema()).willReturn(schema);
-
-        final Edge edge = new Edge.Builder()
-                .group(TestGroups.EDGE)
-                .source("srcVal")
-                .dest("destVal")
-                .matchedVertex(EdgeId.MatchedVertex.SOURCE)
-                .build();
-
-        final Transform transform = new Transform.Builder()
-                .input(edge)
-                .edge(TestGroups.EDGE, new ElementTransformer.Builder()
-                        .select(IdentifierType.ADJACENT_MATCHED_VERTEX.name())
-                        .execute(new Identity())
-                        .project(TestPropertyNames.PROP_3)
-                        .build())
-                .build();
-
-        // When
-        final Iterable<? extends Element> results = handler.doOperation(transform, context, store);
-
-        // Then
-        final Edge expectedEdge = new Edge.Builder()
-                .group(TestGroups.EDGE)
-                .source("srcVal")
-                .dest("destVal")
-                .matchedVertex(EdgeId.MatchedVertex.SOURCE)
-                .property(TestPropertyNames.PROP_3, "destVal")
-                .build();
-        ElementUtil.assertElementEquals(Collections.singletonList(expectedEdge), results);
-    }
+    // todo multiple transformers in the map for different groups
 }

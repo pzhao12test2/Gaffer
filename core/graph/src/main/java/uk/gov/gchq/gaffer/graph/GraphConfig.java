@@ -122,7 +122,7 @@ public final class GraphConfig {
 
         public Builder json(final Path path) {
             try {
-                return json(null != path ? Files.readAllBytes(path) : null);
+                return json(Files.readAllBytes(path));
             } catch (final IOException e) {
                 throw new IllegalArgumentException("Unable to read graph config from path: " + path, e);
             }
@@ -130,7 +130,7 @@ public final class GraphConfig {
 
         public Builder json(final URI uri) {
             try {
-                json(null != uri ? StreamUtil.openStream(uri) : null);
+                json(StreamUtil.openStream(uri));
             } catch (final IOException e) {
                 throw new IllegalArgumentException("Unable to read graph config from uri: " + uri, e);
             }
@@ -140,7 +140,7 @@ public final class GraphConfig {
 
         public Builder json(final InputStream stream) {
             try {
-                json(null != stream ? sun.misc.IOUtils.readFully(stream, stream.available(), true) : null);
+                json(sun.misc.IOUtils.readFully(stream, stream.available(), true));
             } catch (final IOException e) {
                 throw new IllegalArgumentException("Unable to read graph config from input stream", e);
             }
@@ -149,32 +149,27 @@ public final class GraphConfig {
         }
 
         public Builder json(final byte[] bytes) {
-            if (null != bytes) {
-                try {
-                    merge(JSONSerialiser.deserialise(bytes, GraphConfig.class));
-                } catch (final IOException e) {
-                    throw new IllegalArgumentException("Unable to deserialise graph config", e);
-                }
+            try {
+                return merge(JSONSerialiser.deserialise(bytes, GraphConfig.class));
+            } catch (final IOException e) {
+                throw new IllegalArgumentException("Unable to deserialise graph config", e);
             }
-            return this;
         }
 
         public Builder merge(final GraphConfig config) {
-            if (null != config) {
-                if (null != config.getGraphId()) {
-                    this.config.setGraphId(config.getGraphId());
-                }
-                if (null != config.getView()) {
-                    this.config.setView(config.getView());
-                }
-                if (null != config.getLibrary()) {
-                    this.config.setLibrary(config.getLibrary());
-                }
-                if (null != config.getDescription()) {
-                    this.config.setDescription(config.getDescription());
-                }
-                this.config.getHooks().addAll(config.getHooks());
+            if (null != config.getGraphId()) {
+                this.config.setGraphId(config.getGraphId());
             }
+            if (null != config.getView()) {
+                this.config.setView(config.getView());
+            }
+            if (null != config.getLibrary()) {
+                this.config.setLibrary(config.getLibrary());
+            }
+            if (null != config.getDescription()) {
+                this.config.setDescription(config.getDescription());
+            }
+            this.config.getHooks().addAll(config.getHooks());
             return this;
         }
 
@@ -199,16 +194,16 @@ public final class GraphConfig {
         }
 
         public Builder view(final Path view) {
-            return view(null != view ? new View.Builder().json(view).build() : null);
+            return view(new View.Builder().json(view).build());
         }
 
         public Builder view(final InputStream view) {
-            return view(null != view ? new View.Builder().json(view).build() : null);
+            return view(new View.Builder().json(view).build());
         }
 
         public Builder view(final URI view) {
             try {
-                view(null != view ? StreamUtil.openStream(view) : null);
+                view(StreamUtil.openStream(view));
             } catch (final IOException e) {
                 throw new SchemaException("Unable to read view from URI: " + view, e);
             }
@@ -216,7 +211,7 @@ public final class GraphConfig {
         }
 
         public Builder view(final byte[] jsonBytes) {
-            return view(null != jsonBytes ? new View.Builder().json(jsonBytes).build() : null);
+            return view(new View.Builder().json(jsonBytes).build());
         }
 
         public Builder addHooks(final Path hooksPath) {
@@ -247,16 +242,12 @@ public final class GraphConfig {
         }
 
         public Builder addHook(final GraphHook graphHook) {
-            if (null != graphHook) {
-                this.config.getHooks().add(graphHook);
-            }
+            this.config.getHooks().add(graphHook);
             return this;
         }
 
         public Builder addHooks(final GraphHook... graphHooks) {
-            if (null != graphHooks) {
-                Collections.addAll(this.config.getHooks(), graphHooks);
-            }
+            Collections.addAll(this.config.getHooks(), graphHooks);
             return this;
         }
 

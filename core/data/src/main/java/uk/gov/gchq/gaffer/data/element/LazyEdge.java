@@ -110,18 +110,6 @@ public class LazyEdge extends Edge {
     }
 
     @Override
-    public Object getIdentifier(final IdentifierType identifierType) {
-        loadIdentifiers();
-        return super.getIdentifier(identifierType);
-    }
-
-    @Override
-    public MatchedVertex getMatchedVertex() {
-        loadIdentifiers();
-        return edge.getMatchedVertex();
-    }
-
-    @Override
     public boolean equals(final Object element) {
         return edge.equals(element);
     }

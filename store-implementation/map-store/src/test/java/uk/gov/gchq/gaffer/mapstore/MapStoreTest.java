@@ -38,8 +38,7 @@ public class MapStoreTest {
                 StoreTrait.PRE_AGGREGATION_FILTERING,
                 StoreTrait.POST_AGGREGATION_FILTERING,
                 StoreTrait.TRANSFORMATION,
-                StoreTrait.POST_TRANSFORMATION_FILTERING,
-                StoreTrait.MATCHED_VERTEX));
+                StoreTrait.POST_TRANSFORMATION_FILTERING));
         assertEquals(expectedTraits, mapStore.getTraits());
     }
 }

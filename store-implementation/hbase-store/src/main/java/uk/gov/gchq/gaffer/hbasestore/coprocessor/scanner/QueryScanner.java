@@ -47,8 +47,9 @@ public class QueryScanner extends GafferScanner implements RegionScanner {
     public QueryScanner(final RegionScanner scanner,
                         final Scan scan,
                         final Schema schema,
-                        final ElementSerialisation serialisation) {
-        super(scanner, serialisation, createProcessors(scan, schema, serialisation), isIncludeMatchedVertex(scan));
+                        final ElementSerialisation serialisation,
+                        final boolean includeMatchedVertex) {
+        super(scanner, serialisation, createProcessors(scan, schema, serialisation), includeMatchedVertex);
     }
 
     protected static List<GafferScannerProcessor> createProcessors(
@@ -113,12 +114,6 @@ public class QueryScanner extends GafferScanner implements RegionScanner {
             return Collections.emptySet();
         }
         return StringUtil.csvToClasses(bytes, GafferScannerProcessor.class);
-    }
-
-
-    private static boolean isIncludeMatchedVertex(final Scan scan) {
-        final byte[] attr = scan.getAttribute(HBaseStoreConstants.INCLUDE_MATCHED_VERTEX);
-        return null != attr && Boolean.parseBoolean(Bytes.toString(attr));
     }
 
     @Override
