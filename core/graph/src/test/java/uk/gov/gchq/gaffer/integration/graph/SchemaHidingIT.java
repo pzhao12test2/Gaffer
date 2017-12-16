@@ -15,7 +15,6 @@
  */
 package uk.gov.gchq.gaffer.integration.graph;
 
-import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -166,8 +165,8 @@ public abstract class SchemaHidingIT {
         final Iterable<? extends Element> filteredResults = filteredGraph.execute(operation, USER);
 
         // Then
-        ElementUtil.assertElementEquals(fullExpectedResults, Sets.newHashSet(fullResults));
-        ElementUtil.assertElementEquals(filteredExpectedResults, Sets.newHashSet(filteredResults));
+        ElementUtil.assertElementEquals(fullExpectedResults, fullResults);
+        ElementUtil.assertElementEquals(filteredExpectedResults, filteredResults);
     }
 
     protected Schema createFullSchema() {

@@ -119,15 +119,6 @@ public class ValidateTest extends OperationTest<Validate> {
         assertEquals(input, clone.getInput().iterator().next());
     }
 
-    @Test
-    public void shouldGetOutputClass() {
-        // When
-        final Class<?> outputClass = getTestObject().getOutputClass();
-
-        // Then
-        assertEquals(Iterable.class, outputClass);
-    }
-
     @Override
     protected Validate getTestObject() {
         return new Validate();

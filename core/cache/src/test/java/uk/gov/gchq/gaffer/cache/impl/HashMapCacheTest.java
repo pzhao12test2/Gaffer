@@ -22,11 +22,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
-import uk.gov.gchq.gaffer.exception.SerialisationException;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class HashMapCacheTest {
 
@@ -120,42 +116,5 @@ public class HashMapCacheTest {
         assertEquals(4, cache.getAllValues().size());
 
         Assert.assertThat(cache.getAllValues(), IsCollectionContaining.hasItems(1, 2, 3));
-    }
-
-
-    @Test
-    public void shouldThrowForNonJavaSerialisable() throws Exception {
-
-        HashMapCache<String, Object> map = new HashMapCache<>(true);
-
-        String s = "hello";
-        map.put("test1", s);
-
-        class TempClass {
-        }
-
-        TempClass tempClass = new TempClass();
-
-        try {
-            map.put("test1", tempClass);
-            fail("Exception expected");
-        } catch (final Exception e) {
-            assertTrue(e.getCause() instanceof SerialisationException);
-        }
-    }
-
-
-    @Test
-    public void shouldNotThrowForNonJavaSerialisable() throws Exception {
-
-        HashMapCache<String, Object> map = new HashMapCache<>(false);
-
-        map.put("test1", "hello");
-
-        class TempClass {
-        }
-
-        TempClass tempClass = new TempClass();
-        map.put("test1", tempClass);
     }
 }

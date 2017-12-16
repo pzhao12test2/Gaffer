@@ -37,7 +37,6 @@ import uk.gov.gchq.gaffer.serialisation.implementation.JavaSerialiser;
 import uk.gov.gchq.gaffer.serialisation.implementation.MapSerialiser;
 import uk.gov.gchq.gaffer.serialisation.implementation.StringSerialiser;
 import uk.gov.gchq.gaffer.serialisation.implementation.raw.RawLongSerialiser;
-import uk.gov.gchq.gaffer.store.library.HashMapGraphLibrary;
 import uk.gov.gchq.koryphe.impl.predicate.Exists;
 import uk.gov.gchq.koryphe.impl.predicate.IsA;
 import uk.gov.gchq.koryphe.impl.predicate.IsXMoreThanY;
@@ -501,6 +500,7 @@ public class SchemaTest {
         final String type2 = "type2";
         final Serialiser vertexSerialiser = mock(Serialiser.class);
         final Schema schema1 = new Schema.Builder()
+                .id("1")
                 .edge(TestGroups.EDGE, new SchemaEdgeDefinition.Builder()
                         .property(TestPropertyNames.PROP_1, type1)
                         .build())
@@ -514,6 +514,7 @@ public class SchemaTest {
                 .build();
 
         final Schema schema2 = new Schema.Builder()
+                .id("2")
                 .entity(TestGroups.ENTITY_2, new SchemaEntityDefinition.Builder()
                         .property(TestPropertyNames.COUNT, typeShared)
                         .build())
@@ -533,6 +534,7 @@ public class SchemaTest {
                 .build();
 
         // Then
+        assertEquals("1,2,2", mergedSchema.getId());
         assertEquals(2, mergedSchema.getEdges().size());
         assertEquals(1, mergedSchema.getEdge(TestGroups.EDGE).getPropertyMap().size());
         assertEquals(type1, mergedSchema.getEdge(TestGroups.EDGE).getPropertyMap().get(TestPropertyNames.PROP_1));
@@ -560,6 +562,7 @@ public class SchemaTest {
         final String type2 = "type2";
         final Serialiser vertexSerialiser = mock(Serialiser.class);
         final Schema schema1 = new Schema.Builder()
+                .id("1")
                 .edge(TestGroups.EDGE, new SchemaEdgeDefinition.Builder()
                         .property(TestPropertyNames.PROP_1, type1)
                         .build())
@@ -573,6 +576,7 @@ public class SchemaTest {
                 .build();
 
         final Schema schema2 = new Schema.Builder()
+                .id("2")
                 .entity(TestGroups.ENTITY_2, new SchemaEntityDefinition.Builder()
                         .property(TestPropertyNames.COUNT, typeShared)
                         .build())
@@ -592,6 +596,7 @@ public class SchemaTest {
                 .build();
 
         // Then
+        assertEquals("2,1,1", mergedSchema.getId());
         assertEquals(2, mergedSchema.getEdges().size());
         assertEquals(1, mergedSchema.getEdge(TestGroups.EDGE).getPropertyMap().size());
         assertEquals(type1, mergedSchema.getEdge(TestGroups.EDGE).getPropertyMap().get(TestPropertyNames.PROP_1));
@@ -1335,23 +1340,6 @@ public class SchemaTest {
         // When
         new Schema.Builder()
                 .entity(TestGroups.ENTITY, entityDef);
-
-        // Then - no exceptions
-    }
-
-    @Test
-    public void shouldAddMergedSchemaToLibrary() {
-        // Given
-        final HashMapGraphLibrary graphLibrary = new HashMapGraphLibrary();
-        final Schema schema1ToMerge = new Schema.Builder().build();
-        final Schema schema2ToMerge = new Schema.Builder().build();
-
-        final Schema schema = new Schema.Builder().merge(schema1ToMerge)
-                .merge(schema2ToMerge)
-                .build();
-
-        // When
-        graphLibrary.addSchema("TEST_SCHEMA_ID_merged",schema);
 
         // Then - no exceptions
     }

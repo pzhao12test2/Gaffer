@@ -32,7 +32,6 @@ import uk.gov.gchq.gaffer.cache.exception.CacheOperationException;
 import uk.gov.gchq.gaffer.cache.util.CacheProperties;
 import uk.gov.gchq.gaffer.commonutil.CommonTestConstants;
 import uk.gov.gchq.gaffer.commonutil.StreamUtil;
-import uk.gov.gchq.gaffer.commonutil.exception.OverwritingException;
 
 import java.io.File;
 import java.io.IOException;
@@ -163,7 +162,7 @@ public class HazelcastCacheServiceTest {
         try {
             service.putSafeInCache(CACHE_NAME, "test", 2);
             fail("Expected an exception");
-        } catch (final OverwritingException e) {
+        } catch (final CacheOperationException e) {
             assertEquals((Integer) 1, service.getFromCache(CACHE_NAME, "test"));
         }
 

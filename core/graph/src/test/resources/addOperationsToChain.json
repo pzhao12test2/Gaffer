@@ -5,7 +5,7 @@
       "class": "uk.gov.gchq.gaffer.operation.impl.DiscardOutput"
     },
     {
-      "class": "uk.gov.gchq.gaffer.operation.impl.SplitStoreFromFile"
+      "class": "uk.gov.gchq.gaffer.operation.impl.SplitStore"
     }
   ],
   "end": [
@@ -52,7 +52,7 @@
       ],
       "end": [
         {
-          "class": "uk.gov.gchq.gaffer.operation.impl.SplitStoreFromFile"
+          "class": "uk.gov.gchq.gaffer.operation.impl.SplitStore"
         }
       ]
     },
@@ -71,7 +71,7 @@
       },
       "end": [
         {
-          "class": "uk.gov.gchq.gaffer.operation.impl.SplitStoreFromFile"
+          "class": "uk.gov.gchq.gaffer.operation.impl.SplitStore"
         }
       ]
     }

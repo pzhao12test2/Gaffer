@@ -48,32 +48,21 @@ Cache Library README.
 ### ScoreOperationChain
 
 Variables:
-- opScores - required map of operation scores. These are the operation score values.
-- authScores - required map of operation authorisation scores. These are the maximum scores allowed for a user with a given role.
-- scoreResolvers - required (if using NamedOperations) list of score resolvers. These map operation class to its respective score resolver.
+- operationScoresFileName - required file name for your operation scores. These are the operation score values.
+- authScoresFileName - required file name for your operation authorisation scores. These are the maximum scores allowed for a user with a given role.
 
-Example operation scores map:
+Example operation scores file:
 
-```json
-{ 
-  "opScores": {
-    "uk.gov.gchq.gaffer.operation.Operation": 1,
-    "uk.gov.gchq.gaffer.operation.impl.generate.GenerateObjects": 0,
-    "uk.gov.gchq.gaffer.operation.impl.get.GetAllElements": 3
-  }
-}
+```properties
+uk.gov.gchq.gaffer.operation.Operation=2
+uk.gov.gchq.gaffer.operation.impl.generate.GenerateObjects=0
 ```
 
-Example operation authorisation scores map:
+Example operation authorisation scores file:
 
-```json
-{
-  "authScores": {
-     "User": 4,
-     "EnhancedUser": 10,
-     "OtherUser": 6
-  }
-}
+```properties
+User=4
+EnhancedUser=10
 ```
 
 Example operation declarations json file:
@@ -85,19 +74,8 @@ Example operation declarations json file:
       "operation": "uk.gov.gchq.gaffer.operation.impl.ScoreOperationChain",
       "handler": {
         "class": "uk.gov.gchq.gaffer.store.operation.handler.ScoreOperationChainHandler",
-        "opScores": {
-          "uk.gov.gchq.gaffer.operation.Operation": 2,
-          "uk.gov.gchq.gaffer.operation.impl.generate.GenerateObjects": 0
-        },
-        "authScores": {
-          "User": 4,
-          "EnhancedUser": 10
-        },
-        "scoreResolvers": {
-          "uk.gov.gchq.gaffer.named.operation.NamedOperation": {
-            "class": "uk.gov.gchq.gaffer.store.operation.resolver.named.NamedOperationScoreResolver"
-          }
-        }
+        "authScoresFileName": "/path/to/authScores.properties",
+        "operationScoresFileName": "/path/to/opScores.properties"
       }
     }
   ]

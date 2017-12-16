@@ -105,15 +105,6 @@ public class ToVerticesTest extends OperationTest<ToVertices> {
         assertEquals(EdgeVertices.BOTH, clone.getEdgeVertices());
     }
 
-    @Test
-    public void shouldGetOutputClass() {
-        // When
-        final Class<?> outputClass = getTestObject().getOutputClass();
-
-        // Then
-        assertEquals(Iterable.class, outputClass);
-    }
-
     @Override
     protected ToVertices getTestObject() {
         return new ToVertices();
