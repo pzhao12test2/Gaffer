@@ -42,6 +42,7 @@ script:
 - touch NOW
 - echo GIBSTUDYSTART $(date)
 - travis_wait 45 ./cd/verify.sh
+- ./cd/deploy.sh
 - echo GIBSTUDYEND $(date)
 - cd $TRAVIS_BUILD_DIR
 - if [ "$TRAVIS_OS_NAME" == "osx" ];        then echo TESTNUM $(find . -name TEST-*.xml
