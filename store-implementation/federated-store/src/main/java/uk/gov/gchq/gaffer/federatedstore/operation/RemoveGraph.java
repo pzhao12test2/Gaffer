@@ -19,10 +19,9 @@ package uk.gov.gchq.gaffer.federatedstore.operation;
 import org.apache.commons.lang3.exception.CloneFailedException;
 
 import uk.gov.gchq.gaffer.commonutil.Required;
+import uk.gov.gchq.gaffer.operation.Operation;
 
 import java.util.Map;
-
-import static uk.gov.gchq.gaffer.federatedstore.FederatedStoreConstants.KEY_OPERATION_OPTIONS_GRAPH_IDS;
 
 /**
  * An Operation used for removing graphs from a FederatedStore.
@@ -35,15 +34,11 @@ import static uk.gov.gchq.gaffer.federatedstore.FederatedStoreConstants.KEY_OPER
  * @see uk.gov.gchq.gaffer.federatedstore.FederatedStore
  * @see uk.gov.gchq.gaffer.graph.Graph
  */
-public class RemoveGraph implements FederatedOperation {
+public class RemoveGraph implements Operation {
 
     @Required
     private String graphId;
     private Map<String, String> options;
-
-    public RemoveGraph() {
-        addOption(KEY_OPERATION_OPTIONS_GRAPH_IDS, "");
-    }
 
     public String getGraphId() {
         return graphId;
@@ -56,7 +51,7 @@ public class RemoveGraph implements FederatedOperation {
     @Override
     public RemoveGraph shallowClone() throws CloneFailedException {
         return new RemoveGraph.Builder()
-                .graphId(graphId)
+                .setGraphId(graphId)
                 .options(options)
                 .build();
     }
@@ -77,18 +72,7 @@ public class RemoveGraph implements FederatedOperation {
             super(new RemoveGraph());
         }
 
-        /**
-         * Use {@link Builder#graphId} instead.
-         *
-         * @param graphId the graphId to set.
-         * @return the builder
-         */
-        @Deprecated
         public Builder setGraphId(final String graphId) {
-            return graphId(graphId);
-        }
-
-        public Builder graphId(final String graphId) {
             _getOp().setGraphId(graphId);
             return _self();
         }

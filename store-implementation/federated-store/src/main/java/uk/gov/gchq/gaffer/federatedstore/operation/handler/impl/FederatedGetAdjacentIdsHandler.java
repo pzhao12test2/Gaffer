@@ -16,7 +16,6 @@
 
 package uk.gov.gchq.gaffer.federatedstore.operation.handler.impl;
 
-import uk.gov.gchq.gaffer.commonutil.CollectionUtil;
 import uk.gov.gchq.gaffer.commonutil.iterable.ChainedIterable;
 import uk.gov.gchq.gaffer.commonutil.iterable.CloseableIterable;
 import uk.gov.gchq.gaffer.data.element.id.EntityId;
@@ -38,9 +37,7 @@ public class FederatedGetAdjacentIdsHandler extends FederatedOperationOutputHand
     @Override
     protected CloseableIterable<? extends EntityId> mergeResults(final List<CloseableIterable<? extends EntityId>> results, final GetAdjacentIds operation, final Context context, final Store store) {
         // Concatenate all the results into 1 iterable
-        if (results.isEmpty()) {
-            throw new IllegalArgumentException(NO_RESULTS_TO_MERGE_ERROR);
-        }
-        return new ChainedIterable<>(CollectionUtil.toIterableArray(results));
+        return new ChainedIterable<>(results.toArray(new Iterable[results.size()]));
     }
 }
+

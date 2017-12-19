@@ -96,15 +96,6 @@ public class ToCsvTest extends OperationTest {
         return Sets.newHashSet("elementGenerator");
     }
 
-    @Test
-    public void shouldGetOutputClass() {
-        // When
-        final Class<?> outputClass = getTestObject().getOutputClass();
-
-        // Then
-        assertEquals(Iterable.class, outputClass);
-    }
-
     @Override
     protected ToCsv getTestObject() {
         return new ToCsv();

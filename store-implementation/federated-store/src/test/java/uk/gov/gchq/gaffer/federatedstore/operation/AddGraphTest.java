@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import uk.gov.gchq.gaffer.federatedstore.operation.AddGraph.Builder;
+import uk.gov.gchq.gaffer.mapstore.MapStore;
 import uk.gov.gchq.gaffer.mapstore.MapStoreProperties;
 import uk.gov.gchq.gaffer.operation.OperationTest;
 import uk.gov.gchq.gaffer.store.StoreProperties;
@@ -31,7 +32,6 @@ import java.util.Set;
 
 public class AddGraphTest extends OperationTest<AddGraph> {
 
-    private static final String EXPECTED_GRAPH_ID = "testGraphID";
 
     @Override
     protected Set<String> getRequiredFields() {
@@ -41,29 +41,30 @@ public class AddGraphTest extends OperationTest<AddGraph> {
     @Override
     public void builderShouldCreatePopulatedOperation() {
         Schema expectedSchema = new Schema.Builder().build();
+        String expectedGraphId = "testGraphID";
         StoreProperties storeProperties = new MapStoreProperties();
         AddGraph op = new AddGraph.Builder()
-                .graphId(EXPECTED_GRAPH_ID)
+                .graphId(expectedGraphId)
                 .schema(expectedSchema)
                 .storeProperties(storeProperties)
                 .build();
 
-        Assert.assertEquals(EXPECTED_GRAPH_ID, op.getGraphId());
+        Assert.assertEquals(expectedGraphId, op.getGraphId());
         Assert.assertEquals(expectedSchema, op.getSchema());
-        Assert.assertNotNull(op.getStoreProperties().getStorePropertiesClassName());
-        Assert.assertEquals(MapStoreProperties.class, op.getStoreProperties().getStorePropertiesClass());
+        Assert.assertEquals(MapStore.class.getName(), op.getStoreProperties().getStoreClass());
     }
 
     @Override
     public void shouldShallowCloneOperation() {
         final AddGraph a = new Builder()
-                .graphId("graphId")
+                .graphId("testAddGraph")
                 .parentPropertiesId("testPropID")
                 .parentSchemaIds(Lists.newArrayList("testSchemaID"))
                 .schema(new Schema.Builder()
+                        .id("testSchema")
                         .build())
                 .graphAuths("testAuth")
-                .storeProperties(new StoreProperties())
+                .storeProperties(new StoreProperties("testProps"))
                 .build();
 
         final AddGraph b = a.shallowClone();

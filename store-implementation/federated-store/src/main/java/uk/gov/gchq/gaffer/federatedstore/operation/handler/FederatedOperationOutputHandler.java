@@ -17,7 +17,6 @@
 package uk.gov.gchq.gaffer.federatedstore.operation.handler;
 
 import uk.gov.gchq.gaffer.federatedstore.FederatedStore;
-import uk.gov.gchq.gaffer.federatedstore.util.FederatedStoreUtil;
 import uk.gov.gchq.gaffer.graph.Graph;
 import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.operation.io.Output;
@@ -30,7 +29,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static uk.gov.gchq.gaffer.federatedstore.FederatedStoreConstants.KEY_OPERATION_OPTIONS_GRAPH_IDS;
-import static uk.gov.gchq.gaffer.federatedstore.FederatedStoreConstants.getSkipFailedFederatedStoreExecute;
+import static uk.gov.gchq.gaffer.federatedstore.FederatedStoreConstants.KEY_SKIP_FAILED_FEDERATED_STORE_EXECUTE;
 
 /**
  * A abstract handler for Operations with output for FederatedStore
@@ -40,21 +39,24 @@ import static uk.gov.gchq.gaffer.federatedstore.FederatedStoreConstants.getSkipF
  * @see uk.gov.gchq.gaffer.store.operation.handler.OutputOperationHandler
  */
 public abstract class FederatedOperationOutputHandler<OP extends Output<O>, O> implements OutputOperationHandler<OP, O> {
-    public static final String NO_RESULTS_TO_MERGE_ERROR = "The federated operation received no results to merge. A common cause to this is that the operation was performed against no graphs due to visibility and access.";
-
     @Override
     public O doOperation(final OP operation, final Context context, final Store store) throws OperationException {
         final Collection<Graph> graphs = ((FederatedStore) store).getGraphs(context.getUser(), operation.getOption(KEY_OPERATION_OPTIONS_GRAPH_IDS));
         final List<O> results = new ArrayList<>(graphs.size());
         for (final Graph graph : graphs) {
-            final OP updatedOp = FederatedStoreUtil.updateOperationForGraph(operation, graph);
+            final OP updatedOp = FederatedStore.updateOperationForGraph(operation, graph);
             if (null != updatedOp) {
                 O execute = null;
                 try {
                     execute = graph.execute(updatedOp, context.getUser());
                 } catch (final Exception e) {
-                    if (!Boolean.valueOf(getSkipFailedFederatedStoreExecute(updatedOp))) {
-                        throw new OperationException(FederatedStoreUtil.createOperationErrorMsg(operation, graph.getGraphId(), e), e);
+                    if (!Boolean.valueOf(updatedOp.getOption(KEY_SKIP_FAILED_FEDERATED_STORE_EXECUTE))) {
+                        final String additionalInfo = String.format("set the skip and continue flag: %s for operation: %s",
+                                KEY_SKIP_FAILED_FEDERATED_STORE_EXECUTE,
+                                operation.getClass().getSimpleName());
+
+                        throw new OperationException(String.format("Failed to execute %s on graph %s.%n%s",
+                                operation.getClass().getSimpleName(), graph.getGraphId(), additionalInfo), e);
                     }
                 }
                 if (null != execute) {
@@ -62,11 +64,7 @@ public abstract class FederatedOperationOutputHandler<OP extends Output<O>, O> i
                 }
             }
         }
-        try {
-            return mergeResults(results, operation, context, store);
-        } catch (final Exception e) {
-            throw new OperationException(e);
-        }
+        return mergeResults(results, operation, context, store);
     }
 
     protected abstract O mergeResults(final List<O> results, final OP operation, final Context context, final Store store);
