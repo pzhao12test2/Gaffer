@@ -17,6 +17,7 @@
 package uk.gov.gchq.gaffer.data.util;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import uk.gov.gchq.gaffer.data.element.Element;
 import uk.gov.gchq.gaffer.data.element.Entity;
@@ -24,26 +25,21 @@ import uk.gov.gchq.gaffer.data.element.comparison.ElementComparator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
 
 public class ElementUtil {
     public static void assertElementEquals(final Iterable<? extends Element> expected, final Iterable<? extends Element> result) {
-        final List<Element> expectedCache = Lists.newArrayList(expected);
-        final List<Element> resultCache = Lists.newArrayList(result);
+        final Set<Element> expectedSet = Sets.newHashSet(expected);
+        final Set<Element> resultSet = Sets.newHashSet(result);
         try {
-            assertEquals(expectedCache, resultCache);
+            assertEquals(expectedSet, resultSet);
         } catch (final AssertionError err) {
-            final List<Element> expectedList = Lists.newArrayList(expectedCache);
-            final List<Element> resultList = Lists.newArrayList(resultCache);
-            for (final Element element : resultCache) {
-                expectedList.remove(element);
-            }
-            for (final Element element : expectedCache) {
-                resultList.remove(element);
-            }
+            final List<Element> expectedList = Lists.newArrayList(expectedSet);
+            final List<Element> resultList = Lists.newArrayList(resultSet);
+            expectedList.removeAll(resultSet);
+            resultList.removeAll(expectedSet);
 
             final ElementComparator elementComparator = (element1, element2) -> {
                 final String elementStr1 = null == element1 ? "" : element1.toString();
@@ -73,11 +69,11 @@ public class ElementUtil {
                 }
             }
 
-            assertThat("\nMissing entities:\n" + missingEntities.toString()
+            assertEquals("\nMissing entities:\n" + missingEntities.toString()
                             + "\nUnexpected entities:\n" + incorrectEntities.toString()
                             + "\nMissing edges:\n" + missingEdges.toString()
                             + "\nUnexpected edges:\n" + incorrectEdges.toString(),
-                    expectedCache, containsInAnyOrder(resultCache.toArray()));
+                    expectedSet, resultSet);
         }
     }
 }

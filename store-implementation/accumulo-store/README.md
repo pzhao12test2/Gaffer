@@ -31,6 +31,7 @@ Accumulo Store
 12. [Trouble shooting](#trouble-shooting)
 13. [Implementation details](#implementation-details)
 14. [Tests](#tests)
+15. [Accumulo 1.8.0 Support](#accumulo-1.8.0-support)
 16. [Migration](#migration)
 
 
@@ -151,19 +152,10 @@ where:
 To apply these split points to the table, run:
 
 ```java
-SplitStoreFromFile splitStore = new SplitStoreFromFile.Builder()
+SplitStore splitTable = new SplitStore.Builder()
         .inputPath(splitsFilePath)
         .build();
-graph.execute(splitStore, new User());
-```
-
-or from an Iterable:
-
-```java
-SplitStoreFromIterable splitStore = new SplitStoreFromIterable.Builder()
-        .input(splits) // Base64 encoded strings
-        .build();
-graph.execute(splitStore, new User());
+graph.execute(splitTable, new User());
 ```
 
 **Continuous load**
@@ -529,7 +521,6 @@ Ensure that the Accumulo user specified by the `accumulo.user` property has the 
 | ----------------- | ----------- |
 | vis1              | [VisibilityIT](../../integration-test/src/test/java/uk/gov/gchq/gaffer/integration/impl/VisibilityIT.java) |
 | vis2              | [VisibilityIT](../../integration-test/src/test/java/uk/gov/gchq/gaffer/integration/impl/VisibilityIT.java) |
-| public            | [SchemaHidingIT](../../core/graph/src/test/java/uk/gov/gchq/gaffer/integration/graph/SchemaHidingIT.java) |
 | publicVisibility  | [AccumuloAggregationIT](src/test/java/uk/gov/gchq/gaffer/accumulostore/integration/AccumuloAggregationIT.java) |
 | privateVisibility | [AccumuloAggregationIT](src/test/java/uk/gov/gchq/gaffer/accumulostore/integration/AccumuloAggregationIT.java) |
 
@@ -537,6 +528,14 @@ Run the integration tests:
 
 ```
 mvn verify
+```
+
+## Accumulo 1.8.0 Support
+
+Gaffer can be compiled with support for Accumulo 1.8.0. Clear your Maven repository of any Gaffer artifacts and compile Gaffer with the Accumulo-1.8 profile:
+
+```
+mvn clean install -Paccumulo-1.8
 ```
 
 ## Migration

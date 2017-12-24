@@ -2,10 +2,6 @@
 
 set -e
 
-repoName="Gaffer"
-repoId="Gaffer"
-artifactId="gaffer2"
-
 if [ "$RELEASE" == 'true' ] && [ "$TRAVIS_BRANCH" == 'master' ] && [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
     git checkout master
     mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version
@@ -31,19 +27,15 @@ if [ "$RELEASE" == 'true' ] && [ "$TRAVIS_BRANCH" == 'master' ] && [ "$TRAVIS_PU
         git config --global credential.helper "store --file=.git/credentials"
         echo "https://${GITHUB_TOKEN}:@github.com" > .git/credentials
 
-        # Add develop and gh-pages branches
-        git remote set-branches --add origin develop gh-pages
-        git pull
-
         echo ""
         echo "--------------------------------------"
         echo "Tagging version $RELEASE_VERSION"
         echo "--------------------------------------"
         mvn versions:set -DnewVersion=$RELEASE_VERSION -DgenerateBackupPoms=false
-        git commit -a -m "prepare release $artifactId-$RELEASE_VERSION"
-        git tag $artifactId-$RELEASE_VERSION
-        git push origin --tags
+        git commit -a -m "prepare release gaffer-$RELEASE_VERSION"
         git push
+        git tag gaffer2-$RELEASE_VERSION
+        git push origin --tags
 
         echo ""
         echo "--------------------------------------"
@@ -51,25 +43,20 @@ if [ "$RELEASE" == 'true' ] && [ "$TRAVIS_BRANCH" == 'master' ] && [ "$TRAVIS_PU
         echo "--------------------------------------"
         mvn -q clean install -Pquick -Dskip.jar-with-dependencies=true -Dshaded.jar.phase=true
         mvn -q javadoc:javadoc -Pquick
-        git checkout gh-pages
-        rm -rf uk
-        mv target/site/apidocs/* .
-        git commit -a -m "Updated javadoc - $RELEASE_VERSION"
-        git push
-        git checkout master
+        mvn -q scm-publish:publish-scm -Dmaven.javadoc.failOnError=false -Pquick
 
         echo ""
         echo "--------------------------------------"
         echo "Creating GitHub release notes"
         echo "--------------------------------------"
         JSON_DATA="{
-                \"tag_name\": \"$artifactId-$RELEASE_VERSION\",
-                \"name\": \"$repoName $RELEASE_VERSION\",
-                \"body\": \"[$RELEASE_VERSION headliners](https://github.com/gchq/$repoId/issues?q=milestone%3Av$RELEASE_VERSION+label%3Aheadliner)\n\n[$RELEASE_VERSION enhancements](https://github.com/gchq/$repoId/issues?q=milestone%3Av$RELEASE_VERSION+label%3Aenhancement)\n\n[$RELEASE_VERSION bugs fixed](https://github.com/gchq/$repoId/issues?q=milestone%3Av$RELEASE_VERSION+label%3Abug)\n\n[$RELEASE_VERSION migration notes](https://github.com/gchq/$repoId/issues?q=milestone%3Av$RELEASE_VERSION+label%3Amigration-required)\n\n[$RELEASE_VERSION all issues resolved](https://github.com/gchq/$repoId/issues?q=milestone%3Av$RELEASE_VERSION)\",
+                \"tag_name\": \"gaffer-$RELEASE_VERSION\",
+                \"name\": \"Gaffer $RELEASE_VERSION\",
+                \"body\": \"[$RELEASE_VERSION issues resolved](https://github.com/gchq/Gaffer/issues?q=milestone%3Av$RELEASE_VERSION)\n\n[$RELEASE_VERSION issues with migration steps](https://github.com/gchq/Gaffer/issues?q=milestone%3Av$RELEASE_VERSION+label%3Amigration-required)\",
                 \"draft\": false
             }"
         echo $JSON_DATA
-        curl -v --data "$JSON_DATA" https://api.github.com/repos/gchq/$repoId/releases?access_token=$GITHUB_TOKEN
+        curl -v --data "$JSON_DATA" https://api.github.com/repos/gchq/Gaffer/releases?access_token=$GITHUB_TOKEN
 
         echo ""
         echo "--------------------------------------"
@@ -84,7 +71,7 @@ if [ "$RELEASE" == 'true' ] && [ "$TRAVIS_BRANCH" == 'master' ] && [ "$TRAVIS_PU
     else
         echo ""
         echo "======================================"
-        echo "Releasing version $POM_VERSION"
+        echo "Tagging and releasing version $POM_VERSION"
         echo "======================================"
         echo ""
 
@@ -92,11 +79,9 @@ if [ "$RELEASE" == 'true' ] && [ "$TRAVIS_BRANCH" == 'master' ] && [ "$TRAVIS_PU
         gpg --fast-import cd/codesigning.asc
 
         if [ "$MODULES" == '' ]; then
-            echo "Running command: mvn -q deploy -P sign,build-extras,quick --settings cd/mvnsettings.xml -B"
-            mvn deploy -P sign,build-extras,quick --settings cd/mvnsettings.xml -B
+            mvn -q deploy -P sign,build-extras,quick --settings cd/mvnsettings.xml -B
         else
-            echo "Running command: mvn -q deploy -P sign,build-extras,quick --settings cd/mvnsettings.xml -B -pl $MODULES"
-            mvn deploy -P sign,build-extras,quick --settings cd/mvnsettings.xml -B -pl $MODULES
+            mvn -q deploy -P sign,build-extras,quick --settings cd/mvnsettings.xml -B -pl $MODULES
         fi
     fi
 fi

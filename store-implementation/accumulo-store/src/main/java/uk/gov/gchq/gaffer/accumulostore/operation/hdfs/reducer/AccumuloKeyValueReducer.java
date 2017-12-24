@@ -27,7 +27,6 @@ import uk.gov.gchq.gaffer.data.element.Properties;
 import uk.gov.gchq.gaffer.data.element.function.ElementAggregator;
 import uk.gov.gchq.gaffer.data.elementdefinition.exception.SchemaException;
 import uk.gov.gchq.gaffer.store.schema.Schema;
-import uk.gov.gchq.gaffer.store.schema.SchemaElementDefinition;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -37,17 +36,14 @@ import java.util.Iterator;
 import static uk.gov.gchq.gaffer.hdfs.operation.handler.job.factory.SampleDataForSplitPointsJobFactory.SCHEMA;
 
 /**
- * <p>
  * Reducer for use in bulk import of data into Accumulo. It merges all values
  * associated to the gaffer.accumulostore.key by converting them into
  * {@link uk.gov.gchq.gaffer.data.element.Properties} and then merges those, and then
  * converts them back to an Accumulo value.
- * </p>
  * <p>
  * It contains an optimisation so that if there is only one value, we simply
  * output it rather than incurring the cost of deserialising them and then
  * reserialising them.
- * </p>
  */
 public class AccumuloKeyValueReducer extends Reducer<Key, Value, Key, Value> {
     private AccumuloElementConverter elementConverter;
@@ -82,50 +78,36 @@ public class AccumuloKeyValueReducer extends Reducer<Key, Value, Key, Value> {
         final Value firstValue = iter.next();
         final boolean isMulti = iter.hasNext();
 
-        if (isMulti) {
-            reduceMultiValue(key, iter, firstValue, context);
-        } else {
-            context.write(key, firstValue);
-        }
+        context.write(key, reduceValue(key, isMulti, iter, firstValue));
         context.getCounter("Bulk import", getCounterId(isMulti)).increment(1L);
     }
 
-    private void reduceMultiValue(final Key key, final Iterator<Value> iter, final Value firstValue, final Context context)
-            throws IOException, InterruptedException {
+    private Value reduceValue(final Key key, final boolean isMulti, final Iterator<Value> iter,
+                              final Value firstValue) {
+        return isMulti ? reduceMultiValue(key, iter, firstValue) : firstValue;
+    }
+
+    private Value reduceMultiValue(final Key key, final Iterator<Value> iter, final Value firstValue) {
         final String group;
         try {
             group = new String(key.getColumnFamilyData().getBackingArray(), CommonConstants.UTF_8);
         } catch (final UnsupportedEncodingException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
-
-        final SchemaElementDefinition elementDef = schema.getElement(group);
-        if (elementDef.isAggregate()) {
-            Properties state;
-            try {
-                final ElementAggregator aggregator = elementDef.getIngestAggregator();
-                state = elementConverter.getPropertiesFromValue(group, firstValue);
-                while (iter.hasNext()) {
-                    state = aggregator.apply(state, elementConverter.getPropertiesFromValue(group, iter.next()));
-                }
-            } catch (final AccumuloElementConversionException e) {
-                throw new IllegalArgumentException("Failed to get Properties from an accumulo value", e);
-            }
-
-            final Value aggregatedValue;
-            try {
-                aggregatedValue = elementConverter.getValueFromProperties(group, state);
-            } catch (final AccumuloElementConversionException e) {
-                throw new IllegalArgumentException("Failed to get Properties from an accumulo value", e);
-            }
-            context.write(key, aggregatedValue);
-
-        } else {
-            // The group has aggregation disabled - so write all values out.
-            context.write(key, firstValue);
+        Properties state;
+        try {
+            final ElementAggregator aggregator = schema.getElement(group).getIngestAggregator();
+            state = elementConverter.getPropertiesFromValue(group, firstValue);
             while (iter.hasNext()) {
-                context.write(key, iter.next());
+                state = aggregator.apply(state, elementConverter.getPropertiesFromValue(group, iter.next()));
             }
+        } catch (final AccumuloElementConversionException e) {
+            throw new IllegalArgumentException("Failed to get Properties from an accumulo value", e);
+        }
+        try {
+            return elementConverter.getValueFromProperties(group, state);
+        } catch (final AccumuloElementConversionException e) {
+            throw new IllegalArgumentException("Failed to get Properties from an accumulo value", e);
         }
     }
 

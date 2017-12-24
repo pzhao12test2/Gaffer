@@ -24,9 +24,11 @@ import org.slf4j.LoggerFactory;
 import uk.gov.gchq.gaffer.commonutil.iterable.CloseableIterable;
 import uk.gov.gchq.gaffer.commonutil.iterable.CloseableIterator;
 import uk.gov.gchq.gaffer.data.element.Element;
+import uk.gov.gchq.gaffer.data.element.function.ElementFilter;
 import uk.gov.gchq.gaffer.data.element.id.DirectedType;
 import uk.gov.gchq.gaffer.data.element.id.ElementId;
 import uk.gov.gchq.gaffer.data.elementdefinition.view.View;
+import uk.gov.gchq.gaffer.data.elementdefinition.view.ViewUtil;
 import uk.gov.gchq.gaffer.exception.SerialisationException;
 import uk.gov.gchq.gaffer.operation.OperationException;
 import uk.gov.gchq.gaffer.operation.SeedMatching;
@@ -48,7 +50,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 /**
  * Converts the inputs for get element operations and converts them to a mapping of files to Parquet filters which is
@@ -57,7 +58,6 @@ import java.util.stream.Collectors;
 public class ParquetElementRetriever implements CloseableIterable<Element> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ParquetElementRetriever.class);
 
-    private static final String THERE_ARE_NO_RESULTS_FOR_THIS_QUERY = "There are no results for this query";
     private final View view;
     private final DirectedType directedType;
     private final SeededGraphFilters.IncludeIncomingOutgoingType includeIncomingOutgoingType;
@@ -83,6 +83,10 @@ public class ParquetElementRetriever implements CloseableIterable<Element> {
         this.seedMatchingType = seedMatchingType;
         this.seeds = seeds;
         this.graphIndex = store.getGraphIndex();
+        if (null == graphIndex) {
+            throw new OperationException("Can not perform a Get operation when there is no index set, which is " +
+                    "indicative of there being no data or the data ingest failed.");
+        }
         this.parquetFilterUtils = new ParquetFilterUtils(store);
         this.properties = store.getProperties();
         this.user = user;
@@ -99,6 +103,8 @@ public class ParquetElementRetriever implements CloseableIterable<Element> {
     }
 
     protected static class ParquetIterator implements CloseableIterator<Element> {
+        private Boolean needsValidation;
+        private View view;
         private ConcurrentLinkedQueue<Element> queue;
         private List<Future<OperationException>> runningTasks;
         private ExecutorService executorServicePool;
@@ -114,22 +120,21 @@ public class ParquetElementRetriever implements CloseableIterable<Element> {
                                   final Schema gafferSchema,
                                   final User user) {
             try {
-                if (null != graphIndex) {
-                    parquetFilterUtils.buildPathToFilterMap(view, directedType, includeIncomingOutgoingType, seedMatchingType, seeds, graphIndex);
-                    final Map<Path, FilterPredicate> pathToFilterMap = parquetFilterUtils.getPathToFilterMap();
-                    LOGGER.debug("pathToFilterMap: {}", pathToFilterMap);
-                    if (!pathToFilterMap.isEmpty()) {
-                        queue = new ConcurrentLinkedQueue<>();
-                        executorServicePool = Executors.newFixedThreadPool(properties.getThreadsAvailable());
-                        final List<RetrieveElementsFromFile> tasks = new ArrayList<>(pathToFilterMap.size());
-                        tasks.addAll(pathToFilterMap.entrySet().stream().map(entry -> new RetrieveElementsFromFile(entry.getKey(), entry.getValue(), gafferSchema, queue, parquetFilterUtils.needsValidatorsAndFiltersApplying(), properties.getSkipValidation(), view, user)).collect(Collectors.toList()));
-                        runningTasks = executorServicePool.invokeAll(tasks);
-                    } else {
-                        LOGGER.debug(THERE_ARE_NO_RESULTS_FOR_THIS_QUERY);
+                parquetFilterUtils.buildPathToFilterMap(view, directedType, includeIncomingOutgoingType, seedMatchingType, seeds, graphIndex);
+                final Map<Path, FilterPredicate> pathToFilterMap = parquetFilterUtils.getPathToFilterMap();
+                this.needsValidation = parquetFilterUtils.requiresValidation();
+                LOGGER.debug("pathToFilterMap: {}", pathToFilterMap);
+                if (!pathToFilterMap.isEmpty()) {
+                    queue = new ConcurrentLinkedQueue<>();
+                    this.view = view;
+                    executorServicePool = Executors.newFixedThreadPool(properties.getThreadsAvailable());
+                    final List<RetrieveElementsFromFile> tasks = new ArrayList<>(pathToFilterMap.size());
+                    for (final Map.Entry<Path, FilterPredicate> entry : pathToFilterMap.entrySet()) {
+                        tasks.add(new RetrieveElementsFromFile(entry.getKey(), entry.getValue(), gafferSchema, queue, needsValidation, view, user));
                     }
+                    runningTasks = executorServicePool.invokeAll(tasks);
                 } else {
-                    LOGGER.debug("Can not perform a Get operation when there is no index set, which is " +
-                            "indicative of there being no data or the data ingest failed.");
+                    LOGGER.debug("There are no results for this query");
                 }
             } catch (final OperationException | SerialisationException e) {
                 LOGGER.error("Exception while creating the mapping of file paths to Parquet filters: {}", e.getMessage());
@@ -187,7 +192,19 @@ public class ParquetElementRetriever implements CloseableIterable<Element> {
             while (hasNext()) {
                 e = queue.poll();
                 if (null != e) {
-                    return e;
+                    if (needsValidation) {
+                        String group = e.getGroup();
+                        ElementFilter preAggFilter = view.getElement(group).getPreAggregationFilter();
+                        if (null != preAggFilter) {
+                            if (preAggFilter.test(e)) {
+                                ViewUtil.removeProperties(view, e);
+                                return e;
+                            }
+                        }
+                    } else {
+                        ViewUtil.removeProperties(view, e);
+                        return e;
+                    }
                 }
             }
             throw new NoSuchElementException();
@@ -199,6 +216,7 @@ public class ParquetElementRetriever implements CloseableIterable<Element> {
                 executorServicePool.shutdown();
                 executorServicePool = null;
             }
+            needsValidation = null;
             queue = null;
             runningTasks = null;
         }

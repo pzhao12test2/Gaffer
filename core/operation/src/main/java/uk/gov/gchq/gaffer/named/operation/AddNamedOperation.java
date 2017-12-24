@@ -47,7 +47,6 @@ public class AddNamedOperation implements Operation {
     private boolean overwriteFlag = false;
     private Map<String, ParameterDetail> parameters;
     private Map<String, String> options;
-    private Integer score;
 
     private static final String CHARSET_NAME = CommonConstants.UTF_8;
 
@@ -146,7 +145,6 @@ public class AddNamedOperation implements Operation {
                 .overwrite(overwriteFlag)
                 .parameters(parameters)
                 .options(options)
-                .score(score)
                 .build();
     }
 
@@ -158,14 +156,6 @@ public class AddNamedOperation implements Operation {
     @Override
     public void setOptions(final Map<String, String> options) {
         this.options = options;
-    }
-
-    public Integer getScore() {
-        return score;
-    }
-
-    public void setScore(final Integer score) {
-        this.score = score;
     }
 
     public static class Builder extends BaseBuilder<AddNamedOperation, Builder> {
@@ -215,11 +205,6 @@ public class AddNamedOperation implements Operation {
 
         public Builder overwrite() {
             return overwrite(true);
-        }
-
-        public Builder score(final Integer score) {
-            _getOp().setScore(score);
-            return _self();
         }
     }
 }
